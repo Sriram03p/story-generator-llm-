@@ -45,7 +45,10 @@ if "history" not in st.session_state:
 # SIDEBAR SETTINGS
 # ------------------------------
 st.sidebar.header("⚙️ Settings")
-prompt_type = st.sidebar.selectbox("Prompting Type", ["Zero-shot", "Few-shot", "Chain-of-Thought"])
+prompt_type = st.sidebar.selectbox(
+    "Prompting Type",
+    ["Zero-shot", "Few-shot", "Chain-of-Thought", "Role Prompting", "Tree-of-Thought"]
+)
 temperature = st.sidebar.slider("Creativity (Temperature)", 0.0, 1.0, 0.8, 0.1)
 max_tokens = st.sidebar.slider("Max Tokens", 50, 500, 150, 10)
 
@@ -78,50 +81,42 @@ else:
 if st.button("✨ Generate Completion"):
     st.session_state.last_input = story_input
 
-    # Make temperature effect visible in prompt
-    creativity_desc = (
-        "very creative and imaginative" if temperature > 0.7 else
-        "balanced with creativity and realism" if temperature > 0.3 else
-        "factual, concise, and realistic"
-    )
-
     # Token limit instruction so story is complete
     token_instruction = f"Write a complete and meaningful story in under {max_tokens} tokens."
 
+    # PROMPT FORMULATION
     if prompt_type == "Zero-shot":
-        prompt = f"""{token_instruction}
-Ensure it has a proper ending and flows naturally.
-
-Story:
-{story_input}"""
+        prompt = f"""{token_instruction} Ensure it has a proper ending and flows naturally.\nStory: {story_input}"""
 
     elif prompt_type == "Few-shot":
-        prompt = f"""{token_instruction}
+        prompt = f"""{token_instruction}\n
+Example 1: Story: The forest was silent until the leaves began to rustle. Completion: A hidden fox emerged from the bushes, its amber eyes reflecting the moonlight.
 
-Example 1:
-Story: The forest was silent until the leaves began to rustle.
-Completion: A hidden fox emerged from the bushes, its amber eyes reflecting the moonlight.
+Example 2: Story: Sarah opened the old, dusty book and a slip of paper fell out. Completion: It was a love letter dated over a century ago, addressed to someone with her own name.
 
-Example 2:
-Story: Sarah opened the old, dusty book and a slip of paper fell out.
-Completion: It was a love letter dated over a century ago, addressed to someone with her own name.
-
-Now complete this:
-Story: {story_input}
-"""
+Now complete this: Story: {story_input}"""
 
     elif prompt_type == "Chain-of-Thought":
-        prompt = f"""{token_instruction}
+        prompt = f"""{token_instruction}\n
+Story: {story_input}\nReasoning: 
+1. Identify possible directions for the story. 
+2. Choose one that gives a satisfying twist. 
+3. Build suspense with gradual clues. 
+4. Conclude with a strong emotional or surprising impact. 
 
-Story: {story_input}
-Reasoning:
-1. Identify possible directions for the story.
-2. Choose one that gives a satisfying twist.
-3. Build suspense with gradual clues.
-4. Conclude with a strong emotional or surprising impact.
+Final Story:"""
 
-Final Story:
-"""
+    elif prompt_type == "Role Prompting":
+        prompt = f"""{token_instruction}\n
+You are a **master storyteller** with expertise in suspense and emotional writing. Write the continuation of the following story in your own narrative style, making it engaging and immersive.\n
+Story: {story_input}\n
+Final Story:"""
+
+    elif prompt_type == "Tree-of-Thought":
+        prompt = f"""{token_instruction}\n
+Story: {story_input}\n
+Think step by step like a decision tree:\n1. Generate at least 3 different possible continuations.\n2. Briefly evaluate each continuation (pros/cons for suspense, emotional impact, creativity).\n3. Select the best continuation.\n4. Expand it into a complete story with a proper ending.\n
+Final Story:"""
 
     # ------------------------------
     # CALL GEMINI API
